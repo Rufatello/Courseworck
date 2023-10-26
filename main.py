@@ -11,6 +11,8 @@ URL_COMPANY = 'https://api.hh.ru/employers/'
 
 conn = psycopg2.connect(host='localhost', database='coursework', user='postgres', password='12345')
 def load_company(url):
+"""Функция для получения нужных данных, пользватель вводит нужные ему компании"""
+    
     url_company = {}
     list_company = []
     count = 0
@@ -22,16 +24,18 @@ def load_company(url):
             url_company[count] = item.get('vacancies_url')
     return list_company, url_company
 
-"""Словарь url_company хранить ссылки на вакансии и ключ-номер, чтобы в дальнейшем использовать ключ использовать как company_id, а через ссылку выводить вакансии"""
+"""Словарь url_company хранить ссылки на вакансии и ключ-номер, чтобы в дальнейшем использовать ключ, как company_id, а через ссылку выводить вакансии"""
 
 list_company, url_company = load_company(URL_COMPANY)
 
-"""Словарь list_company в дальнейшем будет использоваться для заполнения таблицы company"""
+"""Список list_company в дальнейшем будет использоваться для заполнения таблицы company"""
 
 try:
     with conn:
         with conn.cursor() as cur:
+            
             """Заполняем таблицу company данными"""
+            
             count_1 = 0
             for i in list_company:
                 count_1+=1
@@ -39,6 +43,7 @@ try:
                 conn.commit()
 
             """заполняем таблицу job данными"""
+            
             count = 0
             for i, url in url_company.items():
                 data = requests.get(f'{url}', params={'per_page': 100, 'only_with_salary':True}).json()
@@ -60,21 +65,27 @@ class DBManager:
         self.a = 'Диспетчер чатов, удаленно'
 
     def get_all_vacancies(self):
-        """медот для вывода всех строк из обоих таблиц"""
+        
+        """метод для вывода всех строк из обоих таблиц"""
+        
         with self.conn.cursor() as cur:
             cur.execute('SELECT* FROM companies INNER JOIN job USING(company_id)')
             data = cur.fetchall()
             conn.close()
         return data
     def get_avg_salary(self):
-        """медот для нахождения средней зп"""
+        
+        """метод для нахождения средней зп"""
+        
         with self.conn.cursor() as cur:
             cur.execute('SELECT AVG(solary_do) as solary_avg_do FROM job')
             data_1 = cur.fetchall()
             conn.close()
         return data_1
     def get_vacancies_with_higher_salary(self):
+        
         """вывод всех вакансий где зп больше средней"""
+        
         with self.conn.cursor() as cur:
             cur.execute('SELECT * FROM job WHERE solary_do > (SELECT AVG(solary_do) FROM job)')
             data_2 = cur.fetchall()
@@ -82,8 +93,10 @@ class DBManager:
         return data_2
 
     def get_vacancies_with_keyword(self):
+        
         '''вывод вакансий по названию'''
-        """в качестве аргумента задана обычная переменная c вакансией 'Диспетчер чатов, удаленно'. но можно сделать и инпут"""
+        """в качестве аргумента задана обычная переменная c вакансией 'Диспетчер чатов, удаленно', но можно сделать и инпут"""
+        
         with self.conn.cursor() as cur:
             cur.execute(f"SELECT * FROM job WHERE job_title = '{self.a}'")
             data_3 = cur.fetchall()
